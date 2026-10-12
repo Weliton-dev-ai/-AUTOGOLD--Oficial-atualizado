@@ -102,6 +102,7 @@ export async function generateQuotePdf(
           })
         );
 
+        // Clonar e capturar com html2canvas
         const canvas = await html2canvas(pageEl, {
           scale: 2, // 2x exato para nitidez cristalina
           useCORS: true,
@@ -109,12 +110,12 @@ export async function generateQuotePdf(
           logging: false,
           backgroundColor: '#FFFFFF',
           width: 794,
-          windowWidth: 1024, // Largura desktop para garantir media queries desktop e sem reflow mobile
+          windowWidth: 1024,
           scrollX: 0,
           scrollY: 0,
           imageTimeout: 15000,
           onclone: (clonedDoc, clonedEl) => {
-            // Isolamento da página no topo esquerdo do documento clonado
+            // Assegurar que o clonedDoc mantenha a folha e container em 794px sem distorção
             clonedDoc.documentElement.style.width = '794px';
             clonedDoc.documentElement.style.margin = '0';
             clonedDoc.documentElement.style.padding = '0';
@@ -129,7 +130,7 @@ export async function generateQuotePdf(
             clonedDoc.body.style.backgroundColor = '#FFFFFF';
             clonedDoc.body.style.overflow = 'visible';
 
-            // Posição estritamente em (0, 0) sem '0 auto' para não haver deslocamento horizontal
+            // Manter a folha limpa sem transformações residuais
             clonedEl.style.transform = 'none';
             clonedEl.style.webkitTransform = 'none';
             clonedEl.style.margin = '0';
@@ -141,6 +142,8 @@ export async function generateQuotePdf(
             clonedEl.style.minWidth = '794px';
             clonedEl.style.boxSizing = 'border-box';
             clonedEl.style.backgroundColor = '#FFFFFF';
+            clonedEl.style.boxShadow = 'none';
+            clonedEl.style.borderRadius = '0';
 
             clonedDoc.body.appendChild(clonedEl);
 
@@ -151,9 +154,8 @@ export async function generateQuotePdf(
               img.style.visibility = 'visible';
             });
 
-            // Folha de estilo refinada:
-            // NÃO usar text-rendering: geometricPrecision nem letter-spacing: 0px (causadores de letras sobrepostas)
-            // Preservar fontes mono nos números de orçamento e placas
+            // Preservar a folha de estilo original do aplicativo (Tailwind + cores + fontes)
+            // e apenas ajustar regras de estabilidade de renderização
             const style = clonedDoc.createElement('style');
             style.innerHTML = `
               * {
@@ -161,7 +163,7 @@ export async function generateQuotePdf(
                 -webkit-font-smoothing: antialiased !important;
               }
               body, .pdf-page {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                font-family: Arial, Helvetica, sans-serif !important;
                 text-rendering: auto !important;
                 letter-spacing: normal !important;
                 word-spacing: normal !important;
@@ -173,15 +175,15 @@ export async function generateQuotePdf(
                 min-width: 794px !important;
                 max-width: 794px !important;
                 margin: 0 !important;
-                padding: 36px 40px !important;
                 box-sizing: border-box !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
               }
               .font-mono, [class*="font-mono"] {
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
               }
               table {
                 table-layout: fixed !important;
-                width: 714px !important;
                 border-collapse: collapse !important;
               }
               th, td {
@@ -195,22 +197,21 @@ export async function generateQuotePdf(
 
         // 98% de qualidade JPEG para máxima nitidez das fotos e tipografia
         const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const imgHeight = (canvas.height * printableWidth) / canvas.width;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
         if (i > 0) {
           pdf.addPage('a4', 'p');
         }
 
-        if (imgHeight <= printableHeight) {
-          // Renderiza centralizado com margens reais na folha A4
-          pdf.addImage(imgData, 'JPEG', marginX, marginY, printableWidth, imgHeight, undefined, 'SLOW');
+        // Renderização 1:1 proporcional em folha A4 com preenchimento natural do layout original
+        if (imgHeight <= pdfHeight) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight, undefined, 'SLOW');
         } else {
-          // Se a página for um pouco maior que a altura da folha A4, escala proporcionalmente
-          // para caber 100% em 1 única folha sem cortar assinaturas nem fotos ao meio
-          const scale = printableHeight / imgHeight;
-          const scaledWidth = printableWidth * scale;
-          const centeredX = marginX + (printableWidth - scaledWidth) / 2;
-          pdf.addImage(imgData, 'JPEG', centeredX, marginY, scaledWidth, printableHeight, undefined, 'SLOW');
+          // Se ultrapassar a altura máxima da folha A4 por poucos pixels, ajusta a escala mantendo a proporção perfeita
+          const scale = pdfHeight / imgHeight;
+          const scaledWidth = pdfWidth * scale;
+          const centeredX = (pdfWidth - scaledWidth) / 2;
+          pdf.addImage(imgData, 'JPEG', centeredX, 0, scaledWidth, pdfHeight, undefined, 'SLOW');
         }
       }
     } else {
@@ -261,15 +262,15 @@ export async function generateQuotePdf(
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const imgHeight = (canvas.height * printableWidth) / canvas.width;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      if (imgHeight <= printableHeight) {
-        pdf.addImage(imgData, 'JPEG', marginX, marginY, printableWidth, imgHeight, undefined, 'SLOW');
+      if (imgHeight <= pdfHeight) {
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight, undefined, 'SLOW');
       } else {
-        const scale = printableHeight / imgHeight;
-        const scaledWidth = printableWidth * scale;
-        const centeredX = marginX + (printableWidth - scaledWidth) / 2;
-        pdf.addImage(imgData, 'JPEG', centeredX, marginY, scaledWidth, printableHeight, undefined, 'SLOW');
+        const scale = pdfHeight / imgHeight;
+        const scaledWidth = pdfWidth * scale;
+        const centeredX = (pdfWidth - scaledWidth) / 2;
+        pdf.addImage(imgData, 'JPEG', centeredX, 0, scaledWidth, pdfHeight, undefined, 'SLOW');
       }
     }
   } finally {
