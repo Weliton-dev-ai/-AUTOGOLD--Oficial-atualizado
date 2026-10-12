@@ -649,11 +649,12 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                   </div>
                 ) : (
                   <div
-                    className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0"
+                    className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 notranslate"
+                    translate="no"
                     style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
                   >
-                    <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: '#60a5fa' }}>FLEET</span>
-                    <span className="text-xs font-black tracking-wider" style={{ color: '#38bdf8' }}>AUTO PRO</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider notranslate" translate="no" style={{ color: '#60a5fa' }}>FLEET</span>
+                    <span className="text-xs font-black tracking-wider notranslate" translate="no" style={{ color: '#38bdf8' }}>AUTO PRO</span>
                   </div>
                 )}
 
@@ -1229,7 +1230,7 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                           </p>
                           <div className="flex items-center justify-between text-[9px] pt-0.5" style={{ color: '#64748b' }}>
                             <span>Data do Registro: {foto.dataHora}</span>
-                            <span className="font-bold" style={{ color: '#1d4ed8' }}>Fleet Auto Pro Inspeção</span>
+                            <span className="font-bold notranslate" translate="no" style={{ color: '#1d4ed8' }}>FLEET AUTO PRO Inspeção</span>
                           </div>
                         </div>
                       </div>

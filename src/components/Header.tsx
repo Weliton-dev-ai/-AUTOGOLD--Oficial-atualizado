@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <div className="flex items-center tracking-wider">
+                <div className="flex items-center tracking-wider notranslate" translate="no">
                   <span className="font-black text-lg text-white">FLEET </span>
                   <span className="font-black text-lg text-blue-400">AUTO</span>
                   <span className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black tracking-widest shadow-sm">

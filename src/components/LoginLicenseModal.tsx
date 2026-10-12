@@ -95,7 +95,7 @@ export const LoginLicenseModal: React.FC<LoginLicenseModalProps> = ({ onLoginSuc
             <Wrench className="w-8 h-8 text-white stroke-[2.2]" />
           </div>
           
-          <div className="flex items-center justify-center gap-1.5">
+          <div className="flex items-center justify-center gap-1.5 notranslate" translate="no">
             <span className="text-2xl font-black tracking-wider text-white">FLEET AUTO</span>
             <span className="px-2 py-0.5 rounded-md text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black tracking-widest shadow-sm">
               PRO
