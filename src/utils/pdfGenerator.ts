@@ -9,9 +9,10 @@ export interface GeneratePdfResult {
 }
 
 /**
- * Gera um arquivo PDF a partir de um elemento HTML (A4 portrait).
- * Suporta detecção de páginas dedicadas (.pdf-page) para garantir que
- * fotos do laudo e tabelas nunca sejam cortadas ao meio ou sofram artefatos visuais.
+ * Gera um arquivo PDF de alta definição a partir do elemento HTML (A4 portrait).
+ * Utiliza palco isolado de renderização off-screen para garantir fidelidade
+ * matemática absoluta de 100% com o layout gerado na tela do app, imune a
+ * escalas móveis, barras de rolagem ou artefatos de corte.
  */
 export async function generateQuotePdf(
   elementId: string,
@@ -22,14 +23,9 @@ export async function generateQuotePdf(
     throw new Error(`Elemento #${elementId} não encontrado no DOM para geração de PDF.`);
   }
 
-  // Dimensões A4 em mm
+  // Dimensões padrão da folha A4 em milímetros
   const pdfWidth = 210;
   const pdfHeight = 297;
-  // Margens físicas do documento PDF (em mm) para garantir respiro profissional
-  const marginX = 8;
-  const marginY = 8;
-  const printableWidth = pdfWidth - (marginX * 2); // 194mm
-  const printableHeight = pdfHeight - (marginY * 2); // 281mm
 
   const pdf = new jsPDF({
     orientation: 'p',
@@ -38,251 +34,155 @@ export async function generateQuotePdf(
     compress: true,
   });
 
-  // Salvar estilos originais para restaurar após a geração
-  const originalTransform = container.style.transform;
-  const originalTransformOrigin = container.style.transformOrigin;
-  const originalWidth = container.style.width;
+  // Preaquecimento: assegurar que imagens no container original estejam carregadas
+  const sourceImages = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
+  await Promise.all(
+    sourceImages.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve(true);
+      return new Promise((resolve) => {
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        setTimeout(() => resolve(false), 1500);
+      });
+    })
+  );
 
-  const parent = container.parentElement;
-  const originalParentTransform = parent ? parent.style.transform : '';
-  const originalParentWidth = parent ? parent.style.width : '';
-
-  // Forçar o elemento e seu pai para 794px sem qualquer CSS transform ou transition
-  // Isso impede que escalas de visualização mobile distorçam a rasterização das fontes no canvas
-  const originalParentTransition = parent ? parent.style.transition : '';
-  const originalContainerTransition = container.style.transition;
-
-  if (parent) {
-    parent.style.transform = 'none';
-    parent.style.transition = 'none';
-    parent.style.width = '794px';
+  // Identificar todas as folhas A4 demarcadas (.pdf-page)
+  let pageElements = Array.from(container.querySelectorAll<HTMLElement>('.pdf-page'));
+  if (pageElements.length === 0) {
+    pageElements = [container];
   }
-  container.style.transform = 'none';
-  container.style.transition = 'none';
-  container.style.transformOrigin = 'top left';
-  container.style.width = '794px';
-  container.style.maxWidth = '794px';
-  container.style.minWidth = '794px';
 
-  // Espera adequada para o motor de layout do navegador atualizar o DOM em 794px reais
-  await new Promise((resolve) => setTimeout(resolve, 150));
+  // Criar palco de renderização neutro e isolado anexado ao body
+  // Isso herda todos os estilos globais, Tailwind e fontes, sem distorção de scroll ou escala
+  const renderStage = document.createElement('div');
+  renderStage.id = '__pdf_render_stage__';
+  renderStage.style.position = 'fixed';
+  renderStage.style.left = '0';
+  renderStage.style.top = '0';
+  renderStage.style.width = '794px';
+  renderStage.style.minWidth = '794px';
+  renderStage.style.maxWidth = '794px';
+  renderStage.style.zIndex = '-99999';
+  renderStage.style.opacity = '1';
+  renderStage.style.visibility = 'visible';
+  renderStage.style.pointerEvents = 'none';
+  renderStage.style.backgroundColor = '#ffffff';
+  renderStage.style.margin = '0';
+  renderStage.style.padding = '0';
+  renderStage.style.overflow = 'visible';
+  document.body.appendChild(renderStage);
 
   try {
-    // 1. Garantir que todas as imagens no container estejam carregadas e prontas
-    const allImages = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
-    await Promise.all(
-      allImages.map((img) => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve(true);
-        return new Promise((resolve) => {
-          img.onload = () => resolve(true);
-          img.onerror = () => resolve(false);
-          setTimeout(() => resolve(false), 1200);
-        });
-      })
-    );
+    for (let i = 0; i < pageElements.length; i++) {
+      const pageEl = pageElements[i];
 
-    // Verificar se há páginas demarcadas (.pdf-page)
-    const pageElements = Array.from(container.querySelectorAll<HTMLElement>('.pdf-page'));
+      // Clonar profundamente a folha A4 original
+      const pageClone = pageEl.cloneNode(true) as HTMLElement;
 
-    if (pageElements.length > 0) {
-      // Processamento Página por Página: cada .pdf-page corresponde a 1 folha A4 exata
-      for (let i = 0; i < pageElements.length; i++) {
-        const pageEl = pageElements[i];
+      // Normalizar propriedades visuais da folha para impressão física sem artefatos de tela
+      pageClone.style.transform = 'none';
+      pageClone.style.webkitTransform = 'none';
+      pageClone.style.margin = '0';
+      pageClone.style.boxShadow = 'none';
+      pageClone.style.borderRadius = '0';
+      pageClone.style.width = '794px';
+      pageClone.style.minWidth = '794px';
+      pageClone.style.maxWidth = '794px';
+      pageClone.style.minHeight = '1123px';
+      pageClone.style.boxSizing = 'border-box';
+      pageClone.style.backgroundColor = '#ffffff';
 
-        // Certificar que todas as imagens desta página estão prontas
-        const pageImgs = Array.from(pageEl.querySelectorAll<HTMLImageElement>('img'));
-        await Promise.all(
-          pageImgs.map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve(true);
-            return new Promise((resolve) => {
-              img.onload = () => resolve(true);
-              img.onerror = () => resolve(false);
-              setTimeout(() => resolve(false), 800);
-            });
-          })
-        );
+      // Ocultar botões de ação e elementos com classes print:hidden no clone
+      const elementsToHide = pageClone.querySelectorAll<HTMLElement>(
+        'button, .print\\:hidden, [class*="print:hidden"], input[type="file"]'
+      );
+      elementsToHide.forEach((el) => {
+        el.style.display = 'none';
+      });
 
-        // Clonar e capturar com html2canvas
-        const canvas = await html2canvas(pageEl, {
-          scale: 2, // 2x exato para nitidez cristalina
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          backgroundColor: '#FFFFFF',
-          width: 794,
-          windowWidth: 1024,
-          scrollX: 0,
-          scrollY: 0,
-          imageTimeout: 15000,
-          onclone: (clonedDoc, clonedEl) => {
-            // Assegurar que o clonedDoc mantenha a folha e container em 794px sem distorção
-            clonedDoc.documentElement.style.width = '794px';
-            clonedDoc.documentElement.style.margin = '0';
-            clonedDoc.documentElement.style.padding = '0';
-            clonedDoc.documentElement.style.backgroundColor = '#FFFFFF';
-
-            clonedDoc.body.innerHTML = '';
-            clonedDoc.body.style.width = '794px';
-            clonedDoc.body.style.maxWidth = '794px';
-            clonedDoc.body.style.minWidth = '794px';
-            clonedDoc.body.style.margin = '0';
-            clonedDoc.body.style.padding = '0';
-            clonedDoc.body.style.backgroundColor = '#FFFFFF';
-            clonedDoc.body.style.overflow = 'visible';
-
-            // Manter a folha limpa sem transformações residuais
-            clonedEl.style.transform = 'none';
-            clonedEl.style.webkitTransform = 'none';
-            clonedEl.style.margin = '0';
-            clonedEl.style.position = 'relative';
-            clonedEl.style.top = '0';
-            clonedEl.style.left = '0';
-            clonedEl.style.width = '794px';
-            clonedEl.style.maxWidth = '794px';
-            clonedEl.style.minWidth = '794px';
-            clonedEl.style.boxSizing = 'border-box';
-            clonedEl.style.backgroundColor = '#FFFFFF';
-            clonedEl.style.boxShadow = 'none';
-            clonedEl.style.borderRadius = '0';
-
-            clonedDoc.body.appendChild(clonedEl);
-
-            // Garantir que imagens e canvas permaneçam 100% visíveis
-            const clonedImgs = Array.from(clonedEl.querySelectorAll<HTMLImageElement>('img'));
-            clonedImgs.forEach((img) => {
-              img.style.opacity = '1';
-              img.style.visibility = 'visible';
-            });
-
-            // Preservar a folha de estilo original do aplicativo (Tailwind + cores + fontes)
-            // e apenas ajustar regras de estabilidade de renderização
-            const style = clonedDoc.createElement('style');
-            style.innerHTML = `
-              * {
-                box-sizing: border-box !important;
-                -webkit-font-smoothing: antialiased !important;
-              }
-              body, .pdf-page {
-                font-family: Arial, Helvetica, sans-serif !important;
-                text-rendering: auto !important;
-                letter-spacing: normal !important;
-                word-spacing: normal !important;
-                color: #0f172a !important;
-                background-color: #ffffff !important;
-              }
-              .pdf-page {
-                width: 794px !important;
-                min-width: 794px !important;
-                max-width: 794px !important;
-                margin: 0 !important;
-                box-sizing: border-box !important;
-                box-shadow: none !important;
-                border-radius: 0 !important;
-              }
-              .font-mono, [class*="font-mono"] {
-                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-              }
-              table {
-                table-layout: fixed !important;
-                border-collapse: collapse !important;
-              }
-              th, td {
-                word-break: normal !important;
-                letter-spacing: normal !important;
-              }
-            `;
-            clonedDoc.head.appendChild(style);
-          },
-        });
-
-        // 98% de qualidade JPEG para máxima nitidez das fotos e tipografia
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        if (i > 0) {
-          pdf.addPage('a4', 'p');
+      // Se houver algum canvas original (ex: marcas/assinaturas), copiar os pixels para o clone
+      const originalCanvases = Array.from(pageEl.querySelectorAll<HTMLCanvasElement>('canvas'));
+      const clonedCanvases = Array.from(pageClone.querySelectorAll<HTMLCanvasElement>('canvas'));
+      originalCanvases.forEach((orig, idx) => {
+        const target = clonedCanvases[idx];
+        if (target && orig && orig.width > 0 && orig.height > 0) {
+          target.width = orig.width;
+          target.height = orig.height;
+          const ctx = target.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(orig, 0, 0);
+          }
         }
+      });
 
-        // Renderização 1:1 proporcional em folha A4 com preenchimento natural do layout original
-        if (imgHeight <= pdfHeight) {
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight, undefined, 'SLOW');
-        } else {
-          // Se ultrapassar a altura máxima da folha A4 por poucos pixels, ajusta a escala mantendo a proporção perfeita
-          const scale = pdfHeight / imgHeight;
-          const scaledWidth = pdfWidth * scale;
-          const centeredX = (pdfWidth - scaledWidth) / 2;
-          pdf.addImage(imgData, 'JPEG', centeredX, 0, scaledWidth, pdfHeight, undefined, 'SLOW');
-        }
-      }
-    } else {
-      // Fallback padrão se não houver .pdf-page no DOM
-      const canvas = await html2canvas(container, {
+      // Inserir clone no palco isolado
+      renderStage.innerHTML = '';
+      renderStage.appendChild(pageClone);
+
+      // Aguardar o ciclo de reflow do navegador
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // Assegurar carregamento de todas as imagens do clone
+      const clonedImgs = Array.from(pageClone.querySelectorAll<HTMLImageElement>('img'));
+      await Promise.all(
+        clonedImgs.map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve(true);
+          return new Promise((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            setTimeout(() => resolve(false), 800);
+          });
+        })
+      );
+
+      // Altura calculada da folha (pelo menos 1123px = proporção exata A4)
+      const measuredHeight = Math.max(1123, pageClone.offsetHeight || 1123);
+
+      // Captura via html2canvas com densidade de 2x (nitidez retina)
+      const canvas = await html2canvas(pageClone, {
         scale: 2,
         useCORS: true,
         allowTaint: false,
         logging: false,
         backgroundColor: '#FFFFFF',
         width: 794,
-        windowWidth: 794,
+        height: measuredHeight,
         scrollX: 0,
         scrollY: 0,
+        x: 0,
+        y: 0,
+        windowWidth: 1024,
         imageTimeout: 15000,
-        onclone: (clonedDoc, clonedEl) => {
-          let curr: HTMLElement | null = clonedEl;
-          while (curr) {
-            curr.style.transform = 'none';
-            curr.style.webkitTransform = 'none';
-            curr.style.margin = '0 auto';
-            curr = curr.parentElement;
-          }
-
-          clonedEl.style.width = '794px';
-          clonedEl.style.maxWidth = '794px';
-          clonedEl.style.minWidth = '794px';
-          clonedEl.style.boxSizing = 'border-box';
-          clonedEl.style.backgroundColor = '#FFFFFF';
-          clonedEl.style.margin = '0 auto';
-          clonedEl.style.transform = 'none';
-
-          const style = clonedDoc.createElement('style');
-          style.innerHTML = `
-            * {
-              box-sizing: border-box !important;
-              -webkit-font-smoothing: antialiased !important;
-            }
-            body, .pdf-page {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-              text-rendering: auto !important;
-              letter-spacing: normal !important;
-              word-spacing: normal !important;
-            }
-          `;
-          clonedDoc.head.appendChild(style);
-        },
       });
 
+      // Exportar imagem da folha em JPEG 98%
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const heightInMm = (canvas.height * pdfWidth) / canvas.width;
 
-      if (imgHeight <= pdfHeight) {
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight, undefined, 'SLOW');
+      if (i > 0) {
+        pdf.addPage('a4', 'p');
+      }
+
+      // Se a altura corresponder aproximadamente a folha A4 (297mm ± 8mm):
+      if (Math.abs(heightInMm - pdfHeight) <= 8) {
+        // Enquadramento perfeito na folha inteira
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'SLOW');
+      } else if (heightInMm < pdfHeight) {
+        // Menor que a folha: renderiza a partir do topo sem esticar verticalmente
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, heightInMm, undefined, 'SLOW');
       } else {
-        const scale = pdfHeight / imgHeight;
+        // Se exceder a folha A4 (muitos itens), escala proporcionalmente mantendo a razão de aspecto
+        const scale = pdfHeight / heightInMm;
         const scaledWidth = pdfWidth * scale;
         const centeredX = (pdfWidth - scaledWidth) / 2;
         pdf.addImage(imgData, 'JPEG', centeredX, 0, scaledWidth, pdfHeight, undefined, 'SLOW');
       }
     }
   } finally {
-    // Restaurar estilos originais do container e pai
-    container.style.transform = originalTransform;
-    container.style.transformOrigin = originalTransformOrigin;
-    container.style.width = originalWidth;
-    container.style.transition = originalContainerTransition;
-    if (parent) {
-      parent.style.transform = originalParentTransform;
-      parent.style.width = originalParentWidth;
-      parent.style.transition = originalParentTransition;
+    // Remover o palco isolado do DOM
+    if (renderStage.parentElement) {
+      renderStage.parentElement.removeChild(renderStage);
     }
   }
 

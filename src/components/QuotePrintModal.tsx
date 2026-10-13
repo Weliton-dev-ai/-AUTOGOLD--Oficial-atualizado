@@ -33,83 +33,38 @@ interface PhotoCanvasProps {
 }
 
 /**
- * Componente de Canvas HTML5 para renderização à prova de falhas em html2canvas e PDF.
- * Garante enquadramento milimétrico, resolução 2x (retina) e zero distorções ou cortes.
+ * Componente para exibição e renderização à prova de falhas de fotos no laudo e PDF.
+ * Utiliza elemento img nativo com enquadramento perfeito (objectFit contain/cover),
+ * aceleração por hardware e suporte a impressão e exportação sem dependência de canvas assíncrono.
  */
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ url, width, height, fit, alt }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let isMounted = true;
-    const img = new Image();
-    if (!url.startsWith('data:')) {
-      img.crossOrigin = 'anonymous';
-    }
-
-    img.onload = () => {
-      if (!isMounted) return;
-      const dpr = 2; // Alta densidade de pixels para máxima nitidez
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      ctx.save();
-      ctx.scale(dpr, dpr);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      // Fundo escuro automotivo elegante
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, width, height);
-
-      const nw = img.naturalWidth || width;
-      const nh = img.naturalHeight || height;
-
-      let drawW: number;
-      let drawH: number;
-
-      if (fit === 'contain') {
-        const ratio = Math.min(width / nw, height / nh);
-        drawW = nw * ratio;
-        drawH = nh * ratio;
-      } else {
-        const ratio = Math.max(width / nw, height / nh);
-        drawW = nw * ratio;
-        drawH = nh * ratio;
-      }
-
-      const drawX = (width - drawW) / 2;
-      const drawY = (height - drawH) / 2;
-
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
-      ctx.restore();
-    };
-
-    img.src = url;
-
-    return () => {
-      isMounted = false;
-    };
-  }, [url, width, height, fit]);
-
   return (
-    <canvas
-      ref={canvasRef}
-      aria-label={alt || 'Foto da avaria'}
+    <div
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        display: 'block',
         backgroundColor: '#0f172a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
       }}
-      className="w-full h-full object-contain block"
-    />
+      className="w-full h-full block"
+    >
+      <img
+        src={url}
+        alt={alt || 'Foto da avaria'}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: fit,
+          objectPosition: 'center',
+          display: 'block',
+        }}
+        loading="eager"
+        crossOrigin="anonymous"
+      />
+    </div>
   );
 };
 
@@ -621,242 +576,252 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
             >
           {/* PÁGINA 1: ORÇAMENTO TIMBRADO OFICIAL A4 */}
           <div
-            className="pdf-page bg-white shadow-2xl rounded-xl space-y-4 print:shadow-none print:m-0 print:rounded-none"
+            className="pdf-page bg-white shadow-2xl rounded-xl print:shadow-none print:m-0 print:rounded-none"
             style={{
               width: '794px',
               minWidth: '794px',
               maxWidth: '794px',
+              minHeight: '1123px',
               padding: '36px 40px',
               boxSizing: 'border-box',
               backgroundColor: '#ffffff',
               color: '#0f172a',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '18px',
             }}
           >
-            {/* Cabeçalho da Oficina com Logotipo & Dados Fiscais */}
-            <div
-              className="flex items-center justify-between gap-4 pb-4 print-avoid-break"
-              style={{ borderBottom: '2px solid #0f172a' }}
-            >
-              <div className="flex items-center gap-4">
-                {workshop.logotipoUrl ? (
-                  <div className="max-w-[170px] max-h-16 flex items-center justify-start shrink-0">
-                    <img
-                      src={workshop.logotipoUrl}
-                      alt={workshop.nomeOficina}
-                      className="max-h-16 max-w-[170px] w-auto h-auto object-contain rounded shrink-0 block"
-                      loading="eager"
-                    />
+            {/* Bloco Superior: Cabeçalho, Dados do Cliente/Veículo e Tabela de Serviços */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+              {/* Cabeçalho da Oficina com Logotipo & Dados Fiscais */}
+              <div
+                className="flex items-center justify-between gap-4 pb-4 print-avoid-break"
+                style={{ borderBottom: '2px solid #0f172a' }}
+              >
+                <div className="flex items-center gap-4">
+                  {workshop.logotipoUrl ? (
+                    <div className="max-w-[170px] max-h-16 flex items-center justify-start shrink-0">
+                      <img
+                        src={workshop.logotipoUrl}
+                        alt={workshop.nomeOficina}
+                        className="max-h-16 max-w-[170px] w-auto h-auto object-contain rounded shrink-0 block"
+                        loading="eager"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 notranslate"
+                      translate="no"
+                      style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
+                    >
+                      <span className="text-[10px] uppercase font-bold tracking-wider notranslate" translate="no" style={{ color: '#60a5fa' }}>FLEET</span>
+                      <span className="text-xs font-black tracking-wider notranslate" translate="no" style={{ color: '#38bdf8' }}>AUTO PRO</span>
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-xl font-bold" style={{ color: '#0f172a', lineHeight: '1.25' }}>
+                      {workshop.nomeOficina}
+                    </h1>
+                    {workshop.razaoSocial && (
+                      <p className="text-xs font-medium truncate" style={{ color: '#475569', lineHeight: '1.4' }}>{workshop.razaoSocial}</p>
+                    )}
+                    {workshop.cnpj && (
+                      <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>CNPJ: {workshop.cnpj}</p>
+                    )}
+                    <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>
+                      {workshop.endereco} - {workshop.cidadeUf}
+                    </p>
+                    <p className="text-xs font-bold" style={{ color: '#1e293b', lineHeight: '1.4' }}>
+                      WhatsApp: {workshop.telefoneWhatsApp} {workshop.telefoneFixo ? `| Fixo: ${workshop.telefoneFixo}` : ''}
+                    </p>
                   </div>
-                ) : (
+                </div>
+
+                {/* Número e Validade do Orçamento */}
+                <div
+                  className="text-right p-3.5 rounded-xl shrink-0"
+                  style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1' }}
+                >
+                  <span className="block text-[10px] font-bold uppercase" style={{ color: '#64748b', lineHeight: '1.3' }}>
+                    {quote.tipoOrcamento === 'polimento_estetica'
+                      ? 'Orçamento de Polimento & Estética'
+                      : quote.tipoOrcamento === 'misto'
+                      ? 'Orçamento de Funilaria & Polimento'
+                      : 'Orçamento de Funilaria e Pintura'}
+                  </span>
+                  <span className="block text-lg font-black font-mono" style={{ color: '#0f172a', lineHeight: '1.2', marginTop: '2px' }}>
+                    {quote.numero}
+                  </span>
+                  <div className="mt-1.5 text-xs space-y-0.5" style={{ color: '#475569', lineHeight: '1.4' }}>
+                    <p>
+                      <strong>Emissão:</strong> {new Date(quote.dataCriacao).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p>
+                      <strong>Validade:</strong> {new Date(quote.dataValidade).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados do Cliente e Identificação do Veículo (2 Colunas Flex Estáveis) */}
+              <div className="flex justify-between gap-4 print-avoid-break" style={{ width: '100%' }}>
+                {/* Caixa Cliente */}
+                <div
+                  className="p-3.5 rounded-xl space-y-1.5 text-xs"
+                  style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
+                >
                   <div
-                    className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 notranslate"
-                    translate="no"
-                    style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
+                    className="font-bold text-xs uppercase block mb-1 pb-1"
+                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
                   >
-                    <span className="text-[10px] uppercase font-bold tracking-wider notranslate" translate="no" style={{ color: '#60a5fa' }}>FLEET</span>
-                    <span className="text-xs font-black tracking-wider notranslate" translate="no" style={{ color: '#38bdf8' }}>AUTO PRO</span>
+                    Dados do Cliente
                   </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl font-bold" style={{ color: '#0f172a', lineHeight: '1.25' }}>
-                    {workshop.nomeOficina}
-                  </h1>
-                  {workshop.razaoSocial && (
-                    <p className="text-xs font-medium truncate" style={{ color: '#475569', lineHeight: '1.4' }}>{workshop.razaoSocial}</p>
-                  )}
-                  {workshop.cnpj && (
-                    <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>CNPJ: {workshop.cnpj}</p>
-                  )}
-                  <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>
-                    {workshop.endereco} - {workshop.cidadeUf}
-                  </p>
-                  <p className="text-xs font-bold" style={{ color: '#1e293b', lineHeight: '1.4' }}>
-                    WhatsApp: {workshop.telefoneWhatsApp} {workshop.telefoneFixo ? `| Fixo: ${workshop.telefoneFixo}` : ''}
-                  </p>
-                </div>
-              </div>
-
-              {/* Número e Validade do Orçamento */}
-              <div
-                className="text-right p-3.5 rounded-xl shrink-0"
-                style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1' }}
-              >
-                <span className="block text-[10px] font-bold uppercase" style={{ color: '#64748b', lineHeight: '1.3' }}>
-                  {quote.tipoOrcamento === 'polimento_estetica'
-                    ? 'Orçamento de Polimento & Estética'
-                    : quote.tipoOrcamento === 'misto'
-                    ? 'Orçamento de Funilaria & Polimento'
-                    : 'Orçamento de Funilaria e Pintura'}
-                </span>
-                <span className="block text-lg font-black font-mono" style={{ color: '#0f172a', lineHeight: '1.2', marginTop: '2px' }}>
-                  {quote.numero}
-                </span>
-                <div className="mt-1.5 text-xs space-y-0.5" style={{ color: '#475569', lineHeight: '1.4' }}>
-                  <p>
-                    <strong>Emissão:</strong> {new Date(quote.dataCriacao).toLocaleDateString('pt-BR')}
-                  </p>
-                  <p>
-                    <strong>Validade:</strong> {new Date(quote.dataValidade).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Dados do Cliente e Identificação do Veículo (2 Colunas Flex Estáveis) */}
-            <div className="flex justify-between gap-4 print-avoid-break" style={{ width: '100%' }}>
-              {/* Caixa Cliente */}
-              <div
-                className="p-3.5 rounded-xl space-y-1.5 text-xs"
-                style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
-              >
-                <div
-                  className="font-bold text-xs uppercase block mb-1 pb-1"
-                  style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
-                >
-                  Dados do Cliente
-                </div>
-                <div style={{ lineHeight: '1.4' }}>
-                  <strong style={{ color: '#334155' }}>Nome: </strong>
-                  <span className="font-bold text-sm" style={{ color: '#0f172a' }}>{quote.cliente.nome}</span>
-                </div>
-                <div style={{ lineHeight: '1.4' }}>
-                  <strong style={{ color: '#334155' }}>Telefone / WhatsApp: </strong>
-                  <span style={{ color: '#1e293b' }}>{quote.cliente.telefone || 'Não informado'}</span>
-                </div>
-                {quote.cliente.documento && (
                   <div style={{ lineHeight: '1.4' }}>
-                    <strong style={{ color: '#334155' }}>CPF / CNPJ: </strong>
-                    <span style={{ color: '#1e293b' }}>{quote.cliente.documento}</span>
+                    <strong style={{ color: '#334155' }}>Nome: </strong>
+                    <span className="font-bold text-sm" style={{ color: '#0f172a' }}>{quote.cliente.nome}</span>
                   </div>
-                )}
-              </div>
+                  <div style={{ lineHeight: '1.4' }}>
+                    <strong style={{ color: '#334155' }}>Telefone / WhatsApp: </strong>
+                    <span style={{ color: '#1e293b' }}>{quote.cliente.telefone || 'Não informado'}</span>
+                  </div>
+                  {quote.cliente.documento && (
+                    <div style={{ lineHeight: '1.4' }}>
+                      <strong style={{ color: '#334155' }}>CPF / CNPJ: </strong>
+                      <span style={{ color: '#1e293b' }}>{quote.cliente.documento}</span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Caixa Veículo */}
-              <div
-                className="p-3.5 rounded-xl space-y-1.5 text-xs"
-                style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
-              >
+                {/* Caixa Veículo */}
                 <div
-                  className="font-bold text-xs uppercase block mb-1 pb-1"
-                  style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
+                  className="p-3.5 rounded-xl space-y-1.5 text-xs"
+                  style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
                 >
-                  Identificação do Veículo
-                </div>
-                <div style={{ lineHeight: '1.4' }}>
-                  <strong style={{ color: '#334155' }}>Veículo / Modelo: </strong>
-                  <span className="font-bold text-sm" style={{ color: '#0f172a' }}>
-                    {quote.veiculo.marca ? `${quote.veiculo.marca} ` : ''}{quote.veiculo.modelo || 'Veículo'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 pt-0.5" style={{ lineHeight: '1.4' }}>
-                  <strong style={{ color: '#334155' }}>Placa Oficial: </strong>
-                  <span
-                    className="font-mono font-bold px-2.5 py-0.5 rounded text-xs"
-                    style={{ backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8' }}
+                  <div
+                    className="font-bold text-xs uppercase block mb-1 pb-1"
+                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
                   >
-                    {quote.veiculo.placa || 'A DEFINIR'}
-                  </span>
+                    Identificação do Veículo
+                  </div>
+                  <div style={{ lineHeight: '1.4' }}>
+                    <strong style={{ color: '#334155' }}>Veículo / Modelo: </strong>
+                    <span className="font-bold text-sm" style={{ color: '#0f172a' }}>
+                      {quote.veiculo.marca ? `${quote.veiculo.marca} ` : ''}{quote.veiculo.modelo || 'Veículo'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 pt-0.5" style={{ lineHeight: '1.4' }}>
+                    <strong style={{ color: '#334155' }}>Placa Oficial: </strong>
+                    <span
+                      className="font-mono font-bold px-2.5 py-0.5 rounded text-xs"
+                      style={{ backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8' }}
+                    >
+                      {quote.veiculo.placa || 'A DEFINIR'}
+                    </span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Tabela de Serviços: Larguras Fixas Estabilizadas com colgroup e sem sobreposição */}
+              <div
+                className="rounded-xl overflow-hidden print-avoid-break shadow-sm w-full"
+                style={{ border: '1px solid #cbd5e1' }}
+              >
+                <table className="w-full text-left text-xs border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <colgroup>
+                    <col style={{ width: '40px' }} />
+                    <col style={{ width: '344px' }} />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '150px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                      <th style={{ width: '40px', padding: '9px 6px', textAlign: 'center' }} className="text-[10px] uppercase font-bold">#</th>
+                      <th style={{ width: '344px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Peça / Serviço</th>
+                      <th style={{ width: '180px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Discriminação</th>
+                      <th style={{ width: '150px', padding: '9px 12px', textAlign: 'right' }} className="text-[10px] uppercase font-bold whitespace-nowrap">Preço (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itensComMargemEmbutida.map((item, idx) => {
+                      const isPolishing = item.pecaId.startsWith('polimento_') || item.pecaId.startsWith('addon_');
+
+                      return (
+                        <tr
+                          key={item.id}
+                          style={{
+                            backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            borderBottom: '1px solid #e2e8f0',
+                          }}
+                        >
+                          <td style={{ width: '40px', padding: '9px 6px', textAlign: 'center', verticalAlign: 'middle' }} className="font-bold text-xs text-slate-500">
+                            {idx + 1}
+                          </td>
+                          <td style={{ width: '344px', padding: '9px 12px', verticalAlign: 'middle' }}>
+                            <div style={{ color: '#0f172a', fontWeight: 700, fontSize: '12px', lineHeight: '1.35' }}>
+                              {item.nomePeca}
+                            </div>
+                            {item.observacoes && (
+                              <div style={{ color: '#64748b', fontSize: '10px', lineHeight: '1.3', marginTop: '2px' }}>
+                                Obs: {item.observacoes}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ width: '180px', padding: '9px 12px', verticalAlign: 'middle' }}>
+                            {isPolishing ? (
+                              <span
+                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                style={{
+                                  backgroundColor: '#fef3c7',
+                                  color: '#92400e',
+                                  border: '1px solid #fcd34d',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                Polimento & Estética
+                              </span>
+                            ) : item.avaria === 'retoque_rapido' ? (
+                              <span
+                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                style={{
+                                  backgroundColor: '#ccfbf1',
+                                  color: '#0f766e',
+                                  border: '1px solid #5eead4',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                Retoque Rápido / Localizado
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                style={{
+                                  backgroundColor: '#dbeafe',
+                                  color: '#1e40af',
+                                  border: '1px solid #93c5fd',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                Mão de Obra & Pintura
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ width: '150px', padding: '9px 12px', textAlign: 'right', verticalAlign: 'middle' }} className="font-black text-sm whitespace-nowrap tabular-nums text-slate-900">
+                            {formatCurrencyBRL(item.valorTotalItem)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Tabela de Serviços: Larguras Fixas Estabilizadas com colgroup e sem sobreposição */}
-            <div
-              className="rounded-xl overflow-hidden print-avoid-break shadow-sm w-full"
-              style={{ border: '1px solid #cbd5e1' }}
-            >
-              <table className="w-full text-left text-xs border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
-                <colgroup>
-                  <col style={{ width: '42px' }} />
-                  <col style={{ width: '350px' }} />
-                  <col style={{ width: '180px' }} />
-                  <col style={{ width: '146px' }} />
-                </colgroup>
-                <thead>
-                  <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                    <th style={{ width: '42px', padding: '9px 6px', textAlign: 'center' }} className="text-[10px] uppercase font-bold">#</th>
-                    <th style={{ width: '350px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Peça / Serviço</th>
-                    <th style={{ width: '180px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Discriminação</th>
-                    <th style={{ width: '146px', padding: '9px 12px', textAlign: 'right' }} className="text-[10px] uppercase font-bold whitespace-nowrap">Preço (R$)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {itensComMargemEmbutida.map((item, idx) => {
-                    const isPolishing = item.pecaId.startsWith('polimento_') || item.pecaId.startsWith('addon_');
-
-                    return (
-                      <tr
-                        key={item.id}
-                        style={{
-                          backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                          borderBottom: '1px solid #e2e8f0',
-                        }}
-                      >
-                        <td style={{ width: '42px', padding: '9px 6px', textAlign: 'center', verticalAlign: 'middle' }} className="font-bold text-xs text-slate-500">
-                          {idx + 1}
-                        </td>
-                        <td style={{ width: '350px', padding: '9px 12px', verticalAlign: 'middle' }}>
-                          <div style={{ color: '#0f172a', fontWeight: 700, fontSize: '12px', lineHeight: '1.35' }}>
-                            {item.nomePeca}
-                          </div>
-                          {item.observacoes && (
-                            <div style={{ color: '#64748b', fontSize: '10px', lineHeight: '1.3', marginTop: '2px' }}>
-                              Obs: {item.observacoes}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ width: '180px', padding: '9px 12px', verticalAlign: 'middle' }}>
-                          {isPolishing ? (
-                            <span
-                              className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
-                              style={{
-                                backgroundColor: '#fef3c7',
-                                color: '#92400e',
-                                border: '1px solid #fcd34d',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              Polimento & Estética
-                            </span>
-                          ) : item.avaria === 'retoque_rapido' ? (
-                            <span
-                              className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
-                              style={{
-                                backgroundColor: '#ccfbf1',
-                                color: '#0f766e',
-                                border: '1px solid #5eead4',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              Retoque Rápido / Localizado
-                            </span>
-                          ) : (
-                            <span
-                              className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
-                              style={{
-                                backgroundColor: '#dbeafe',
-                                color: '#1e40af',
-                                border: '1px solid #93c5fd',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              Mão de Obra & Pintura
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ width: '146px', padding: '9px 12px', textAlign: 'right', verticalAlign: 'middle' }} className="font-black text-sm whitespace-nowrap tabular-nums text-slate-900">
-                          {formatCurrencyBRL(item.valorTotalItem)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Resumo Financeiro com Caixa de Sinal de 50% Pix e Totalizador */}
-            <div className="flex justify-between gap-4 items-stretch print-avoid-break" style={{ width: '100%' }}>
+            {/* Bloco Inferior: Resumo Financeiro, Sinal 50% Pix, Prazos, Garantia, Observações e Assinaturas */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: 'auto' }}>
+              {/* Resumo Financeiro com Caixa de Sinal de 50% Pix e Totalizador */}
+              <div className="flex justify-between gap-4 items-stretch print-avoid-break" style={{ width: '100%' }}>
               {/* Esquerda: Caixa de Entrada 50% via Pix (58%) */}
               <div
                 className="p-4 rounded-2xl space-y-3 flex flex-col justify-between"
@@ -1059,9 +1024,10 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* FIM DA PÁGINA 1 */}
           </div>
+
+          {/* FIM DA PÁGINA 1 */}
+        </div>
 
           {/* BANNER PARA ANEXAR FOTOS SE O ORÇAMENTO NÃO POSSUIR AINDA */}
           {!hasPhotos && (
@@ -1096,15 +1062,20 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
             return (
               <div
                 key={`photo-page-${pageIndex}`}
-                className="pdf-page bg-white shadow-2xl rounded-xl space-y-4 print:shadow-none print:m-0 print:rounded-none print-page-break"
+                className="pdf-page bg-white shadow-2xl rounded-xl print:shadow-none print:m-0 print:rounded-none print-page-break"
                 style={{
                   width: '794px',
                   minWidth: '794px',
                   maxWidth: '794px',
+                  minHeight: '1123px',
                   padding: '36px 40px',
                   boxSizing: 'border-box',
                   backgroundColor: '#ffffff',
                   color: '#0f172a',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '16px',
                 }}
               >
                 {/* Cabeçalho do Laudo Fotográfico */}
@@ -1241,7 +1212,7 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                 {/* Rodapé do Laudo */}
                 <div
                   className="pt-3 flex justify-between items-center text-[10px]"
-                  style={{ borderTop: '1px solid #e2e8f0', color: '#64748b' }}
+                  style={{ borderTop: '1px solid #e2e8f0', color: '#64748b', marginTop: 'auto' }}
                 >
                   <span>Documento fotográfico autenticado pela oficina {workshop.nomeOficina}</span>
                   <span className="font-mono font-bold">{quote.numero}</span>
