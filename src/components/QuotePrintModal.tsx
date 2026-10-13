@@ -552,10 +552,11 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
         )}
 
         {/* Container responsivo com rolagem suave ou auto-ajuste de escala no celular */}
+        {/* Container responsivo com rolagem suave ou auto-ajuste de escala no celular */}
         <div className="bg-slate-900/40 p-2 sm:p-6 overflow-x-auto flex justify-center print:bg-white print:p-0">
           <div
             style={{
-              width: previewScale < 1 ? `${Math.round(794 * previewScale)}px` : '794px',
+              width: (!isGeneratingPdf && previewScale < 1) ? `${Math.round(794 * previewScale)}px` : '794px',
               transition: 'width 0.2s ease',
             }}
             className="flex flex-col items-center"
@@ -582,58 +583,103 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
               minWidth: '794px',
               maxWidth: '794px',
               minHeight: '1123px',
-              padding: '36px 40px',
+              padding: '24px 36px',
               boxSizing: 'border-box',
               backgroundColor: '#ffffff',
               color: '#0f172a',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: '18px',
+              gap: '12px',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid',
             }}
           >
-            {/* Bloco Superior: Cabeçalho, Dados do Cliente/Veículo e Tabela de Serviços */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+            {/* Bloco Superior: Marca Oficial, Cabeçalho da Oficina, Dados Cliente/Veículo e Tabela */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+              {/* Barra Fixa Oficial de Identificação: FLEET AUTO PRO */}
+              <div
+                className="flex items-center justify-between pb-2 notranslate"
+                translate="no"
+                style={{
+                  borderBottom: '1.5px solid #0f172a',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid',
+                }}
+              >
+                <div className="flex items-center gap-2 notranslate" translate="no">
+                  <div
+                    className="w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] notranslate shadow-sm"
+                    translate="no"
+                    style={{ backgroundColor: '#0f172a', color: '#38bdf8' }}
+                  >
+                    F
+                  </div>
+                  <span
+                    className="font-black text-xs tracking-wider notranslate"
+                    translate="no"
+                    style={{ color: '#0f172a', letterSpacing: '0.05em' }}
+                  >
+                    FLEET AUTO PRO
+                  </span>
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded notranslate"
+                    translate="no"
+                    style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}
+                  >
+                    GESTÃO AUTOMOTIVA • FUNILARIA & PINTURA
+                  </span>
+                </div>
+                <div className="text-[10px] font-mono font-bold" style={{ color: '#64748b' }}>
+                  ORÇAMENTO OFICIAL Nº {quote.numero}
+                </div>
+              </div>
+
               {/* Cabeçalho da Oficina com Logotipo & Dados Fiscais */}
               <div
-                className="flex items-center justify-between gap-4 pb-4 print-avoid-break"
-                style={{ borderBottom: '2px solid #0f172a' }}
+                className="flex items-center justify-between gap-4 pb-2 print-avoid-break"
+                style={{
+                  borderBottom: '1px solid #e2e8f0',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid',
+                }}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   {workshop.logotipoUrl ? (
-                    <div className="max-w-[170px] max-h-16 flex items-center justify-start shrink-0">
+                    <div className="max-w-[140px] max-h-14 flex items-center justify-start shrink-0">
                       <img
                         src={workshop.logotipoUrl}
                         alt={workshop.nomeOficina}
-                        className="max-h-16 max-w-[170px] w-auto h-auto object-contain rounded shrink-0 block"
+                        className="max-h-14 max-w-[140px] w-auto h-auto object-contain rounded shrink-0 block"
                         loading="eager"
+                        crossOrigin="anonymous"
                       />
                     </div>
                   ) : (
                     <div
-                      className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 notranslate"
+                      className="w-13 h-13 rounded-xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 notranslate"
                       translate="no"
                       style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
                     >
-                      <span className="text-[10px] uppercase font-bold tracking-wider notranslate" translate="no" style={{ color: '#60a5fa' }}>FLEET</span>
-                      <span className="text-xs font-black tracking-wider notranslate" translate="no" style={{ color: '#38bdf8' }}>AUTO PRO</span>
+                      <span className="text-[8.5px] uppercase font-bold tracking-wider notranslate" translate="no" style={{ color: '#60a5fa' }}>FLEET</span>
+                      <span className="text-[10.5px] font-black tracking-wider notranslate" translate="no" style={{ color: '#38bdf8' }}>AUTO PRO</span>
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-xl font-bold" style={{ color: '#0f172a', lineHeight: '1.25' }}>
+                    <h1 className="text-base font-bold truncate" style={{ color: '#0f172a', lineHeight: '1.2' }}>
                       {workshop.nomeOficina}
                     </h1>
                     {workshop.razaoSocial && (
-                      <p className="text-xs font-medium truncate" style={{ color: '#475569', lineHeight: '1.4' }}>{workshop.razaoSocial}</p>
+                      <p className="text-[10px] font-medium truncate" style={{ color: '#475569', lineHeight: '1.25' }}>{workshop.razaoSocial}</p>
                     )}
                     {workshop.cnpj && (
-                      <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>CNPJ: {workshop.cnpj}</p>
+                      <p className="text-[10px]" style={{ color: '#475569', lineHeight: '1.25' }}>CNPJ: {workshop.cnpj}</p>
                     )}
-                    <p className="text-xs" style={{ color: '#475569', lineHeight: '1.4' }}>
+                    <p className="text-[10px] truncate" style={{ color: '#475569', lineHeight: '1.25' }}>
                       {workshop.endereco} - {workshop.cidadeUf}
                     </p>
-                    <p className="text-xs font-bold" style={{ color: '#1e293b', lineHeight: '1.4' }}>
+                    <p className="text-[10px] font-bold" style={{ color: '#1e293b', lineHeight: '1.25' }}>
                       WhatsApp: {workshop.telefoneWhatsApp} {workshop.telefoneFixo ? `| Fixo: ${workshop.telefoneFixo}` : ''}
                     </p>
                   </div>
@@ -641,20 +687,20 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
 
                 {/* Número e Validade do Orçamento */}
                 <div
-                  className="text-right p-3.5 rounded-xl shrink-0"
+                  className="text-right p-2 rounded-xl shrink-0"
                   style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1' }}
                 >
-                  <span className="block text-[10px] font-bold uppercase" style={{ color: '#64748b', lineHeight: '1.3' }}>
+                  <span className="block text-[9px] font-bold uppercase" style={{ color: '#64748b', lineHeight: '1.2' }}>
                     {quote.tipoOrcamento === 'polimento_estetica'
-                      ? 'Orçamento de Polimento & Estética'
+                      ? 'Polimento & Estética'
                       : quote.tipoOrcamento === 'misto'
-                      ? 'Orçamento de Funilaria & Polimento'
-                      : 'Orçamento de Funilaria e Pintura'}
+                      ? 'Funilaria & Polimento'
+                      : 'Funilaria e Pintura'}
                   </span>
-                  <span className="block text-lg font-black font-mono" style={{ color: '#0f172a', lineHeight: '1.2', marginTop: '2px' }}>
+                  <span className="block text-sm font-black font-mono" style={{ color: '#0f172a', lineHeight: '1.2', marginTop: '1px' }}>
                     {quote.numero}
                   </span>
-                  <div className="mt-1.5 text-xs space-y-0.5" style={{ color: '#475569', lineHeight: '1.4' }}>
+                  <div className="mt-0.5 text-[10px] space-y-0.5" style={{ color: '#475569', lineHeight: '1.25' }}>
                     <p>
                       <strong>Emissão:</strong> {new Date(quote.dataCriacao).toLocaleDateString('pt-BR')}
                     </p>
@@ -666,28 +712,42 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
               </div>
 
               {/* Dados do Cliente e Identificação do Veículo (2 Colunas Flex Estáveis) */}
-              <div className="flex justify-between gap-4 print-avoid-break" style={{ width: '100%' }}>
+              <div
+                className="flex justify-between gap-3 print-avoid-break"
+                style={{
+                  width: '100%',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid',
+                }}
+              >
                 {/* Caixa Cliente */}
                 <div
-                  className="p-3.5 rounded-xl space-y-1.5 text-xs"
-                  style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
+                  className="p-2.5 rounded-xl space-y-0.5 text-xs"
+                  style={{
+                    width: 'calc(50% - 6px)',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                  }}
                 >
                   <div
-                    className="font-bold text-xs uppercase block mb-1 pb-1"
-                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
+                    className="font-bold text-[10.5px] uppercase block mb-1 pb-0.5"
+                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.3' }}
                   >
                     Dados do Cliente
                   </div>
-                  <div style={{ lineHeight: '1.4' }}>
+                  <div style={{ lineHeight: '1.3' }}>
                     <strong style={{ color: '#334155' }}>Nome: </strong>
-                    <span className="font-bold text-sm" style={{ color: '#0f172a' }}>{quote.cliente.nome}</span>
+                    <span className="font-bold text-xs" style={{ color: '#0f172a' }}>{quote.cliente.nome}</span>
                   </div>
-                  <div style={{ lineHeight: '1.4' }}>
+                  <div style={{ lineHeight: '1.3' }}>
                     <strong style={{ color: '#334155' }}>Telefone / WhatsApp: </strong>
                     <span style={{ color: '#1e293b' }}>{quote.cliente.telefone || 'Não informado'}</span>
                   </div>
                   {quote.cliente.documento && (
-                    <div style={{ lineHeight: '1.4' }}>
+                    <div style={{ lineHeight: '1.3' }}>
                       <strong style={{ color: '#334155' }}>CPF / CNPJ: </strong>
                       <span style={{ color: '#1e293b' }}>{quote.cliente.documento}</span>
                     </div>
@@ -696,25 +756,32 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
 
                 {/* Caixa Veículo */}
                 <div
-                  className="p-3.5 rounded-xl space-y-1.5 text-xs"
-                  style={{ width: 'calc(50% - 8px)', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1' }}
+                  className="p-2.5 rounded-xl space-y-0.5 text-xs"
+                  style={{
+                    width: 'calc(50% - 6px)',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                  }}
                 >
                   <div
-                    className="font-bold text-xs uppercase block mb-1 pb-1"
-                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.4' }}
+                    className="font-bold text-[10.5px] uppercase block mb-1 pb-0.5"
+                    style={{ color: '#0f172a', borderBottom: '1px solid #e2e8f0', lineHeight: '1.3' }}
                   >
                     Identificação do Veículo
                   </div>
-                  <div style={{ lineHeight: '1.4' }}>
+                  <div style={{ lineHeight: '1.3' }}>
                     <strong style={{ color: '#334155' }}>Veículo / Modelo: </strong>
-                    <span className="font-bold text-sm" style={{ color: '#0f172a' }}>
+                    <span className="font-bold text-xs" style={{ color: '#0f172a' }}>
                       {quote.veiculo.marca ? `${quote.veiculo.marca} ` : ''}{quote.veiculo.modelo || 'Veículo'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 pt-0.5" style={{ lineHeight: '1.4' }}>
+                  <div className="flex items-center gap-2 pt-0.5" style={{ lineHeight: '1.3' }}>
                     <strong style={{ color: '#334155' }}>Placa Oficial: </strong>
                     <span
-                      className="font-mono font-bold px-2.5 py-0.5 rounded text-xs"
+                      className="font-mono font-bold px-2 py-0.5 rounded text-[10.5px]"
                       style={{ backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #94a3b8' }}
                     >
                       {quote.veiculo.placa || 'A DEFINIR'}
@@ -723,24 +790,38 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                 </div>
               </div>
 
-              {/* Tabela de Serviços: Larguras Fixas Estabilizadas com colgroup e sem sobreposição */}
+              {/* Tabela de Serviços: Larguras Fixas (Total 722px) com Quebra de Texto Segura e Preços Alinhados */}
               <div
-                className="rounded-xl overflow-hidden print-avoid-break shadow-sm w-full"
-                style={{ border: '1px solid #cbd5e1' }}
+                className="rounded-xl overflow-hidden print-avoid-break shadow-sm"
+                style={{
+                  width: '722px',
+                  maxWidth: '722px',
+                  border: '1px solid #cbd5e1',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid',
+                }}
               >
-                <table className="w-full text-left text-xs border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+                <table
+                  className="text-left text-xs border-collapse"
+                  style={{
+                    tableLayout: 'fixed',
+                    width: '722px',
+                    maxWidth: '722px',
+                    borderCollapse: 'collapse',
+                  }}
+                >
                   <colgroup>
-                    <col style={{ width: '40px' }} />
-                    <col style={{ width: '344px' }} />
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '36px' }} />
+                    <col style={{ width: '386px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '140px' }} />
                   </colgroup>
                   <thead>
                     <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                      <th style={{ width: '40px', padding: '9px 6px', textAlign: 'center' }} className="text-[10px] uppercase font-bold">#</th>
-                      <th style={{ width: '344px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Peça / Serviço</th>
-                      <th style={{ width: '180px', padding: '9px 12px' }} className="text-[10px] uppercase font-bold">Discriminação</th>
-                      <th style={{ width: '150px', padding: '9px 12px', textAlign: 'right' }} className="text-[10px] uppercase font-bold whitespace-nowrap">Preço (R$)</th>
+                      <th style={{ width: '36px', padding: '7px 4px', textAlign: 'center' }} className="text-[10px] uppercase font-bold">#</th>
+                      <th style={{ width: '386px', padding: '7px 10px' }} className="text-[10px] uppercase font-bold">Peça / Serviço / Descrição</th>
+                      <th style={{ width: '160px', padding: '7px 6px', textAlign: 'center' }} className="text-[10px] uppercase font-bold">Discriminação</th>
+                      <th style={{ width: '140px', padding: '7px 10px', textAlign: 'right' }} className="text-[10px] uppercase font-bold whitespace-nowrap">Preço (R$)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -755,23 +836,33 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                             borderBottom: '1px solid #e2e8f0',
                           }}
                         >
-                          <td style={{ width: '40px', padding: '9px 6px', textAlign: 'center', verticalAlign: 'middle' }} className="font-bold text-xs text-slate-500">
+                          <td style={{ width: '36px', padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }} className="font-bold text-xs text-slate-500">
                             {idx + 1}
                           </td>
-                          <td style={{ width: '344px', padding: '9px 12px', verticalAlign: 'middle' }}>
-                            <div style={{ color: '#0f172a', fontWeight: 700, fontSize: '12px', lineHeight: '1.35' }}>
+                          <td
+                            style={{
+                              width: '386px',
+                              maxWidth: '386px',
+                              padding: '6px 10px',
+                              verticalAlign: 'middle',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              whiteSpace: 'normal',
+                            }}
+                          >
+                            <div style={{ color: '#0f172a', fontWeight: 700, fontSize: '11.5px', lineHeight: '1.35', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                               {item.nomePeca}
                             </div>
                             {item.observacoes && (
-                              <div style={{ color: '#64748b', fontSize: '10px', lineHeight: '1.3', marginTop: '2px' }}>
+                              <div style={{ color: '#64748b', fontSize: '9.5px', lineHeight: '1.3', marginTop: '1.5px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                                 Obs: {item.observacoes}
                               </div>
                             )}
                           </td>
-                          <td style={{ width: '180px', padding: '9px 12px', verticalAlign: 'middle' }}>
+                          <td style={{ width: '160px', padding: '6px 6px', verticalAlign: 'middle', textAlign: 'center' }}>
                             {isPolishing ? (
                               <span
-                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                className="inline-block px-2 py-0.5 rounded text-[9.5px] font-bold"
                                 style={{
                                   backgroundColor: '#fef3c7',
                                   color: '#92400e',
@@ -783,7 +874,7 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                               </span>
                             ) : item.avaria === 'retoque_rapido' ? (
                               <span
-                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                className="inline-block px-2 py-0.5 rounded text-[9.5px] font-bold"
                                 style={{
                                   backgroundColor: '#ccfbf1',
                                   color: '#0f766e',
@@ -791,11 +882,11 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                                   whiteSpace: 'nowrap',
                                 }}
                               >
-                                Retoque Rápido / Localizado
+                                Retoque Rápido
                               </span>
                             ) : (
                               <span
-                                className="inline-block px-2.5 py-1 rounded text-[10px] font-bold"
+                                className="inline-block px-2 py-0.5 rounded text-[9.5px] font-bold"
                                 style={{
                                   backgroundColor: '#dbeafe',
                                   color: '#1e40af',
@@ -803,12 +894,33 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                                   whiteSpace: 'nowrap',
                                 }}
                               >
-                                Mão de Obra & Pintura
+                                Funilaria & Pintura
                               </span>
                             )}
                           </td>
-                          <td style={{ width: '150px', padding: '9px 12px', textAlign: 'right', verticalAlign: 'middle' }} className="font-black text-sm whitespace-nowrap tabular-nums text-slate-900">
-                            {formatCurrencyBRL(item.valorTotalItem)}
+                          <td
+                            style={{
+                              width: '140px',
+                              minWidth: '140px',
+                              maxWidth: '140px',
+                              padding: '6px 10px',
+                              textAlign: 'right',
+                              verticalAlign: 'middle',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                whiteSpace: 'nowrap',
+                                fontVariantNumeric: 'tabular-nums',
+                                fontWeight: 800,
+                                fontSize: '12px',
+                                color: '#0f172a',
+                              }}
+                            >
+                              {formatCurrencyBRL(item.valorTotalItem)}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -818,216 +930,254 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
               </div>
             </div>
 
-            {/* Bloco Inferior: Resumo Financeiro, Sinal 50% Pix, Prazos, Garantia, Observações e Assinaturas */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginTop: 'auto' }}>
+            {/* Bloco Inferior: Resumo Financeiro, Sinal 50% Pix, Termos, Garantia e Assinaturas */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                width: '100%',
+                marginTop: 'auto',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid',
+              }}
+            >
               {/* Resumo Financeiro com Caixa de Sinal de 50% Pix e Totalizador */}
-              <div className="flex justify-between gap-4 items-stretch print-avoid-break" style={{ width: '100%' }}>
-              {/* Esquerda: Caixa de Entrada 50% via Pix (58%) */}
               <div
-                className="p-4 rounded-2xl space-y-3 flex flex-col justify-between"
-                style={{
-                  width: '58%',
-                  boxSizing: 'border-box',
-                  backgroundColor: '#0f172a',
-                  color: '#ffffff',
-                  border: '1px solid #1e293b',
-                }}
+                className="flex justify-between gap-3.5 items-stretch print-avoid-break"
+                style={{ width: '100%', pageBreakInside: 'avoid', breakInside: 'avoid' }}
               >
+                {/* Esquerda: Caixa de Entrada 50% via Pix (58%) */}
                 <div
-                  className="flex items-center justify-between pb-2"
-                  style={{ borderBottom: '1px solid #334155' }}
+                  className="p-3 rounded-xl space-y-1.5 flex flex-col justify-between"
+                  style={{
+                    width: '58%',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#0f172a',
+                    color: '#ffffff',
+                    border: '1px solid #1e293b',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                  }}
                 >
-                  <span
-                    className="font-bold text-xs uppercase flex items-center gap-1.5"
-                    style={{ color: '#facc15' }}
-                  >
-                    <ShieldCheck className="w-4 h-4 text-yellow-400 shrink-0" />
-                    Condição de Entrada: Sinal de 50% no Pix
-                  </span>
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded font-semibold"
-                    style={{ backgroundColor: '#1e293b', color: '#94a3b8' }}
-                  >
-                    Reserva & Início
-                  </span>
-                </div>
-
-                {/* Valores Divididos (50% Entrada e 50% Entrega) */}
-                <div className="flex justify-between gap-3">
                   <div
-                    className="p-3 rounded-xl"
-                    style={{
-                      width: 'calc(50% - 6px)',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#022c22',
-                      border: '1px solid #059669',
-                    }}
+                    className="flex items-center justify-between pb-1"
+                    style={{ borderBottom: '1px solid #334155' }}
                   >
                     <span
-                      className="block text-[10px] uppercase font-bold"
-                      style={{ color: '#6ee7b7' }}
+                      className="font-bold text-xs uppercase flex items-center gap-1.5"
+                      style={{ color: '#facc15' }}
                     >
-                      Sinal de Entrada (50%):
+                      <ShieldCheck className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                      Condição de Entrada: Sinal de 50% no Pix
                     </span>
                     <span
-                      className="text-xl font-black block mt-0.5 tabular-nums"
-                      style={{ color: '#34d399' }}
+                      className="text-[9.5px] px-2 py-0.5 rounded font-semibold"
+                      style={{ backgroundColor: '#1e293b', color: '#94a3b8' }}
                     >
-                      {formatCurrencyBRL(sinal50Final)}
+                      Reserva & Início
                     </span>
                   </div>
 
+                  {/* Valores Divididos (50% Entrada e 50% Entrega) */}
+                  <div className="flex justify-between gap-2">
+                    <div
+                      className="p-2 rounded-xl"
+                      style={{
+                        width: 'calc(50% - 4px)',
+                        boxSizing: 'border-box',
+                        backgroundColor: '#022c22',
+                        border: '1px solid #059669',
+                      }}
+                    >
+                      <span
+                        className="block text-[9.5px] uppercase font-bold"
+                        style={{ color: '#6ee7b7' }}
+                      >
+                        Sinal de Entrada (50%):
+                      </span>
+                      <span
+                        className="text-base font-black block mt-0.5 tabular-nums"
+                        style={{ color: '#34d399' }}
+                      >
+                        {formatCurrencyBRL(sinal50Final)}
+                      </span>
+                    </div>
+
+                    <div
+                      className="p-2 rounded-xl"
+                      style={{
+                        width: 'calc(50% - 4px)',
+                        boxSizing: 'border-box',
+                        backgroundColor: '#1e293b',
+                        border: '1px solid #334155',
+                      }}
+                    >
+                      <span
+                        className="block text-[9.5px] uppercase font-bold"
+                        style={{ color: '#94a3b8' }}
+                      >
+                        Saldo na Entrega (50%):
+                      </span>
+                      <span
+                        className="text-base font-bold block mt-0.5 tabular-nums"
+                        style={{ color: '#f8fafc' }}
+                      >
+                        {formatCurrencyBRL(restante50Final)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dados do Pix em Destaque: Chave e Favorecido */}
                   <div
-                    className="p-3 rounded-xl"
+                    className="p-2 rounded-xl space-y-1"
                     style={{
-                      width: 'calc(50% - 6px)',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#1e293b',
+                      backgroundColor: '#020617',
                       border: '1px solid #334155',
                     }}
                   >
-                    <span
-                      className="block text-[10px] uppercase font-bold"
-                      style={{ color: '#94a3b8' }}
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-[11px] font-semibold" style={{ color: '#cbd5e1' }}>
+                        Chave Pix ({workshop.tipoChavePix}):
+                      </span>
+                      <div className="flex items-center gap-1.5 overflow-hidden">
+                        <span
+                          className="font-mono font-bold select-all text-[11px] px-2 py-0.5 rounded-lg truncate"
+                          style={{
+                            backgroundColor: '#0f172a',
+                            color: '#facc15',
+                            border: '1px solid #854d0e',
+                          }}
+                        >
+                          {workshop.chavePix}
+                        </span>
+                        <button
+                          onClick={handleCopyPix}
+                          type="button"
+                          className="print:hidden p-1 rounded text-slate-200 transition-colors cursor-pointer shrink-0"
+                          style={{ backgroundColor: '#334155' }}
+                          title="Copiar Chave Pix"
+                        >
+                          {copiedKey ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      className="flex items-center justify-between gap-1 text-[10.5px] pt-0.5"
+                      style={{ borderTop: '1px solid #1e293b' }}
                     >
-                      Saldo na Entrega (50%):
-                    </span>
-                    <span
-                      className="text-xl font-bold block mt-0.5 tabular-nums"
-                      style={{ color: '#f8fafc' }}
-                    >
-                      {formatCurrencyBRL(restante50Final)}
-                    </span>
+                      <span style={{ color: '#94a3b8' }}>Favorecido / Titular:</span>
+                      <span className="font-semibold" style={{ color: '#f8fafc' }}>
+                        {workshop.titularPix}
+                      </span>
+                    </div>
                   </div>
+
+                  <p className="text-[9px] leading-tight" style={{ color: '#94a3b8' }}>
+                    * O agendamento e a execução dos serviços iniciam-se mediante a confirmação do sinal de 50%.
+                  </p>
                 </div>
 
-                {/* Dados do Pix em Destaque: Chave e Favorecido */}
+                {/* Direita: Totalizador (40%) */}
                 <div
-                  className="p-3 rounded-xl space-y-2"
+                  className="p-3 rounded-xl space-y-1.5 text-xs flex flex-col justify-between"
                   style={{
-                    backgroundColor: '#020617',
-                    border: '1px solid #334155',
+                    width: '40%',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
                   }}
                 >
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-xs font-semibold" style={{ color: '#cbd5e1' }}>
-                      Chave Pix ({workshop.tipoChavePix}):
-                    </span>
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                      <span
-                        className="font-mono font-bold select-all text-sm px-2.5 py-1 rounded-lg truncate"
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#facc15',
-                          border: '1px solid #854d0e',
-                        }}
-                      >
-                        {workshop.chavePix}
+                  <div>
+                    <div className="flex justify-between" style={{ color: '#475569' }}>
+                      <span>Total Serviços & MDO:</span>
+                      <span className="font-bold tabular-nums" style={{ color: '#0f172a' }}>
+                        {formatCurrencyBRL(totalServicosExibido)}
                       </span>
-                      <button
-                        onClick={handleCopyPix}
-                        type="button"
-                        className="print:hidden p-1.5 rounded-lg text-slate-200 transition-colors cursor-pointer shrink-0"
-                        style={{ backgroundColor: '#334155' }}
-                        title="Copiar Chave Pix"
-                      >
-                        {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
+                    </div>
+
+                    {quote.desconto > 0 && (
+                      <div className="flex justify-between font-bold mt-1" style={{ color: '#059669' }}>
+                        <span>Desconto Aplicado:</span>
+                        <span className="tabular-nums">-{formatCurrencyBRL(quote.desconto)}</span>
+                      </div>
+                    )}
+
+                    <div
+                      className="pt-1.5 mt-1.5 flex justify-between items-baseline"
+                      style={{ borderTop: '2px solid #0f172a' }}
+                    >
+                      <span className="font-black text-xs uppercase" style={{ color: '#0f172a' }}>
+                        VALOR TOTAL:
+                      </span>
+                      <span className="text-lg font-black tabular-nums" style={{ color: '#0f172a' }}>
+                        {formatCurrencyBRL(valorTotalFinal)}
+                      </span>
                     </div>
                   </div>
+
+                  {/* Termos e Garantias */}
                   <div
-                    className="flex items-center justify-between gap-1 text-xs pt-2"
-                    style={{ borderTop: '1px solid #1e293b' }}
+                    className="pt-1.5 text-[10.5px] space-y-0.5"
+                    style={{
+                      borderTop: '1px solid #cbd5e1',
+                      color: '#475569',
+                      pageBreakInside: 'avoid',
+                      breakInside: 'avoid',
+                    }}
                   >
-                    <span style={{ color: '#94a3b8' }}>Favorecido / Titular:</span>
-                    <span className="font-semibold" style={{ color: '#f8fafc' }}>
-                      {workshop.titularPix}
-                    </span>
+                    <p>
+                      <strong style={{ color: '#0f172a' }}>Prazo de Execução:</strong> {quote.prazoExecucaoDias} dias úteis
+                    </p>
+                    <p>
+                      <strong style={{ color: '#0f172a' }}>Garantia dos Serviços:</strong> {workshop.textoGarantia}
+                    </p>
                   </div>
                 </div>
-
-                <p className="text-[10px] leading-tight" style={{ color: '#94a3b8' }}>
-                  * O início da execução dos serviços e agendamento inicia-se após a confirmação do sinal de 50%.
-                </p>
               </div>
 
-              {/* Direita: Totalizador (40%) */}
+              {/* Observações Gerais e Assinaturas */}
               <div
-                className="p-4 rounded-2xl space-y-2.5 text-xs flex flex-col justify-between"
+                className="pt-1 text-xs space-y-2 print-avoid-break"
                 style={{
-                  width: '40%',
-                  boxSizing: 'border-box',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #cbd5e1',
+                  borderTop: '1px solid #e2e8f0',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid',
                 }}
               >
-                <div>
-                  <div className="flex justify-between" style={{ color: '#475569' }}>
-                    <span>Total Serviços & MDO:</span>
-                    <span className="font-bold tabular-nums" style={{ color: '#0f172a' }}>
-                      {formatCurrencyBRL(totalServicosExibido)}
-                    </span>
+                {quote.observacoesGerais && (
+                  <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                    <strong style={{ color: '#1e293b' }}>Observações Gerais e Termos:</strong>
+                    <p className="mt-0.5 text-[10px]" style={{ color: '#475569' }}>{quote.observacoesGerais}</p>
                   </div>
+                )}
 
-                  {quote.desconto > 0 && (
-                    <div className="flex justify-between font-bold mt-2" style={{ color: '#059669' }}>
-                      <span>Desconto Aplicado:</span>
-                      <span className="tabular-nums">-{formatCurrencyBRL(quote.desconto)}</span>
-                    </div>
-                  )}
-
-                  <div
-                    className="pt-3 mt-3 flex justify-between items-baseline"
-                    style={{ borderTop: '2px solid #0f172a' }}
-                  >
-                    <span className="font-black text-sm uppercase" style={{ color: '#0f172a' }}>
-                      VALOR TOTAL:
-                    </span>
-                    <span className="text-2xl font-black tabular-nums" style={{ color: '#0f172a' }}>
-                      {formatCurrencyBRL(valorTotalFinal)}
-                    </span>
+                {/* Linhas de Assinatura (2 Colunas Flex Estáveis) */}
+                <div
+                  className="flex justify-between gap-8 pt-2 text-center text-xs"
+                  style={{
+                    width: '100%',
+                    color: '#334155',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                  }}
+                >
+                  <div className="pt-1" style={{ width: 'calc(50% - 16px)', borderTop: '1px solid #94a3b8' }}>
+                    <p className="font-bold text-xs" style={{ color: '#0f172a' }}>{workshop.nomeOficina}</p>
+                    <p className="text-[9.5px]" style={{ color: '#64748b' }}>Responsável Técnico / Funilaria & Pintura</p>
                   </div>
-                </div>
-
-                <div className="pt-2 text-[11px] space-y-1 border-t border-slate-200" style={{ color: '#475569' }}>
-                  <p>
-                    <strong style={{ color: '#0f172a' }}>Prazo de Execução:</strong> {quote.prazoExecucaoDias} dias úteis
-                  </p>
-                  <p>
-                    <strong style={{ color: '#0f172a' }}>Garantia dos Serviços:</strong> {workshop.textoGarantia}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Observações Gerais e Assinaturas */}
-            <div
-              className="pt-3 text-xs space-y-4 print-avoid-break"
-              style={{ borderTop: '1px solid #e2e8f0' }}
-            >
-              {quote.observacoesGerais && (
-                <div>
-                  <strong style={{ color: '#1e293b' }}>Observações Gerais e Termos:</strong>
-                  <p className="mt-0.5" style={{ color: '#475569' }}>{quote.observacoesGerais}</p>
-                </div>
-              )}
-
-              {/* Linhas de Assinatura (2 Colunas Flex Estáveis) */}
-              <div className="flex justify-between gap-8 pt-5 text-center text-xs" style={{ width: '100%', color: '#334155' }}>
-                <div className="pt-2" style={{ width: 'calc(50% - 16px)', borderTop: '1px solid #94a3b8' }}>
-                  <p className="font-bold" style={{ color: '#0f172a' }}>{workshop.nomeOficina}</p>
-                  <p className="text-[10px]" style={{ color: '#64748b' }}>Responsável Técnico / Funilaria & Pintura</p>
-                </div>
-                <div className="pt-2" style={{ width: 'calc(50% - 16px)', borderTop: '1px solid #94a3b8' }}>
-                  <p className="font-bold" style={{ color: '#0f172a' }}>{quote.cliente.nome}</p>
-                  <p className="text-[10px]" style={{ color: '#64748b' }}>Aceite do Cliente e Aprovação do Orçamento</p>
+                  <div className="pt-1" style={{ width: 'calc(50% - 16px)', borderTop: '1px solid #94a3b8' }}>
+                    <p className="font-bold text-xs" style={{ color: '#0f172a' }}>{quote.cliente.nome}</p>
+                    <p className="text-[9.5px]" style={{ color: '#64748b' }}>Aceite do Cliente e Aprovação do Orçamento</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* FIM DA PÁGINA 1 */}
-        </div>
 
           {/* BANNER PARA ANEXAR FOTOS SE O ORÇAMENTO NÃO POSSUIR AINDA */}
           {!hasPhotos && (
@@ -1102,9 +1252,15 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                       </div>
                     )}
                     <div>
-                      <h2 className="text-sm font-bold uppercase" style={{ color: '#0f172a' }}>
-                        Laudo Fotográfico de Registro de Avarias & Vistoria
-                      </h2>
+                      <div className="flex items-center gap-1.5 notranslate" translate="no">
+                        <span className="font-black text-xs notranslate" translate="no" style={{ color: '#1d4ed8' }}>
+                          FLEET AUTO PRO
+                        </span>
+                        <span className="text-slate-400 text-xs">•</span>
+                        <h2 className="text-xs font-bold uppercase" style={{ color: '#0f172a' }}>
+                          Laudo Fotográfico de Registro de Avarias & Vistoria
+                        </h2>
+                      </div>
                       <p className="text-[11px]" style={{ color: '#475569' }}>
                         Anexo Oficial do Orçamento Nº <strong style={{ color: '#0f172a' }}>{quote.numero}</strong> • Veículo:{' '}
                         <strong style={{ color: '#0f172a' }}>{quote.veiculo.marca} {quote.veiculo.modelo} ({quote.veiculo.placa})</strong>
@@ -1214,7 +1370,7 @@ export const QuotePrintModal: React.FC<QuotePrintModalProps> = ({
                   className="pt-3 flex justify-between items-center text-[10px]"
                   style={{ borderTop: '1px solid #e2e8f0', color: '#64748b', marginTop: 'auto' }}
                 >
-                  <span>Documento fotográfico autenticado pela oficina {workshop.nomeOficina}</span>
+                  <span className="notranslate" translate="no">FLEET AUTO PRO • Documento fotográfico autenticado pela oficina {workshop.nomeOficina}</span>
                   <span className="font-mono font-bold">{quote.numero}</span>
                 </div>
               </div>
